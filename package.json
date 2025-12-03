@@ -5,6 +5,7 @@
   "main": "src/server.js",
   "type": "module",
   "scripts": {
+    "build": "prisma generate",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
@@ -12,7 +13,11 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.js"
   },
-  "keywords": ["logging", "backend", "api"],
+  "keywords": [
+    "logging",
+    "backend",
+    "api"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -29,5 +34,3 @@
     "prisma": "^5.7.1"
   }
 }
-
-
