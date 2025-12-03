@@ -57,7 +57,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *         description: Server is healthy
  */
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: formatKarachiTime(getKarachiTime()) });
+    res.json({ status: 'ok', timestamp: formatKarachiTime(getKarachiTime()) });
 });
 
 // Routes
@@ -95,6 +95,7 @@ process.on('SIGTERM', async () => {
 });
 
 app.listen(PORT, HOST, () => {
+    console.log('Database connected successfully');
     console.log(`Server running on http://${HOST}:${PORT}`);
     console.log(`Swagger docs available at http://${HOST}:${PORT}/api-docs`);
 });
