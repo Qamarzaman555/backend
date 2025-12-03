@@ -15,6 +15,7 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
+const swaggerBaseUrl = process.env.SWAGGER_BASE_URL || 'http://localhost:3000';
 
 // Swagger configuration
 const swaggerOptions = {
@@ -27,7 +28,7 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: `http://${HOST}:${PORT}`,
+                url: `${swaggerBaseUrl}`,
                 description: 'Development server',
             },
         ],
