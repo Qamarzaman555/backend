@@ -7,7 +7,17 @@
   "scripts": {
     "build": "prisma generate",
     "postinstall": "prisma generate",
-    "start": "node src/server.js",
+    "start": "pm2 start src/server.js",
+    "stop": "pm2 stop src/server.js",
+    "restart": "pm2 restart src/server.js",
+    "delete": "pm2 delete src/server.js",
+    "list": "pm2 list",
+    "logs": "pm2 logs src/server.js",
+    "logs:tail": "pm2 logs src/server.js --lines 100",
+    "logs:follow": "pm2 logs src/server.js --lines 100 --follow",
+    "logs:clear": "pm2 logs src/server.js --clear",
+    "logs:flush": "pm2 logs src/server.js --flush",
+    "logs:flush:all": "pm2 logs --flush",
     "dev": "nodemon src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -22,14 +32,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
     "@prisma/client": "^5.7.1",
-    "prisma": "^5.7.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "swagger-ui-express": "^5.0.0",
+    "express": "^4.18.2",
+    "express-validator": "^7.0.1",
+    "pm2": "^6.0.14",
+    "prisma": "^5.7.1",
     "swagger-jsdoc": "^6.2.8",
-    "express-validator": "^7.0.1"
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
