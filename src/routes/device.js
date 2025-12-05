@@ -15,8 +15,8 @@ const router = express.Router();
  *         - platform
  *       properties:
  *         id:
- *           type: string
- *           description: Unique device ID
+ *           type: integer
+ *           description: Unique device ID (auto-incremented)
  *         deviceKey:
  *           type: string
  *           description: Device identifier (e.g., "device - model")

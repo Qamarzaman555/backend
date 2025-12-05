@@ -48,7 +48,29 @@ npm start
 
 The server will start on `http://0.0.0.0:3000` (accessible from physical devices on the same network).
 
-**Important**: Update the `backendBaseUrl` in `BackendLoggingService.kt` to match your backend server IP address.
+## Connecting Physical Devices
+
+**Important**: For physical Android devices to connect to the backend:
+
+1. **Find your computer's IP address:**
+   ```bash
+   # macOS/Linux
+   ifconfig | grep "inet " | grep -v 127.0.0.1
+   
+   # Or check in System Preferences > Network (macOS)
+   ```
+
+2. **Update your Android app:**
+   - In `BackendLoggingService.kt`, set the backend URL to: `http://YOUR_COMPUTER_IP:3000`
+   - Example: `http://192.168.100.24:3000`
+   - Make sure your Android device and computer are on the **same WiFi network**
+
+3. **Test the connection:**
+   - From your Android device's browser, visit: `http://YOUR_COMPUTER_IP:3000/health`
+   - You should see: `{"status":"ok","timestamp":"..."}`
+
+4. **For Android Emulator:**
+   - Use: `http://10.0.2.2:3000` (special IP for Android emulator)
 
 ## API Documentation
 

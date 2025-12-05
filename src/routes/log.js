@@ -17,11 +17,14 @@ const router = express.Router();
  *         - message
  *       properties:
  *         id:
- *           type: string
- *           description: Unique log ID
+ *           type: integer
+ *           description: Unique log ID (auto-incremented)
  *         sessionId:
+ *           type: integer
+ *           description: Session ID (integer)
+ *         deviceKey:
  *           type: string
- *           description: Session UUID
+ *           description: Device key identifier for searching logs by device
  *         timestamp:
  *           type: string
  *           format: date-time
@@ -35,6 +38,93 @@ const router = express.Router();
 
 /**
  * @swagger
+ * /api/logs/device/{deviceKey}:
+ *   get:
+ *     summary: Get all logs for a device
+ *     tags: [Logs]
+ *     parameters:
+ *       - in: path
+ *         name: deviceKey
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Device key identifier
+ *       - in: query
+ *         name: level
+ *         schema:
+ *           type: string
+ *         description: Filter by log level
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 100
+ *         description: Limit number of results
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Offset for pagination
+ *     responses:
+ *       200:
+ *         description: List of logs for the device
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 logs:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Log'
+ *                 total:
+ *                   type: integer
+ *                 limit:
+ *                   type: integer
+ *                 offset:
+ *                   type: integer
+ */
+router.get('/device/:deviceKey', async (req, res, next) => {
+  try {
+    const { deviceKey } = req.params;
+    const { level, limit = 100, offset = 0 } = req.query;
+
+    const where = {
+      deviceKey,
+      ...(level && { level }),
+    };
+
+    const logs = await prisma.log.findMany({
+      where,
+      take: parseInt(limit),
+      skip: parseInt(offset),
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+
+    // Format timestamps to Pakistani time (UTC+5) for display
+    const formattedLogs = logs.map(log => ({
+      ...log,
+      timestamp: formatKarachiTime(log.timestamp),
+    }));
+
+    const total = await prisma.log.count({ where });
+
+    res.json({
+      logs: formattedLogs,
+      total,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
  * /api/logs/session/{sessionId}:
  *   get:
  *     summary: Get all logs for a session
@@ -45,7 +135,7 @@ const router = express.Router();
  *         required: true
  *         schema:
  *           type: string
- *         description: Session UUID
+ *         description: Session ID (integer)
  *       - in: query
  *         name: level
  *         schema:
@@ -76,10 +166,14 @@ const router = express.Router();
 router.get('/session/:sessionId', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
+    const sessionIdInt = parseInt(sessionId, 10);
+    if (isNaN(sessionIdInt)) {
+      return res.status(400).json({ error: 'Invalid session ID' });
+    }
     const { level, limit = 100, offset = 0 } = req.query;
 
     const where = {
-      sessionId,
+      sessionId: sessionIdInt,
       ...(level && { level }),
     };
 
@@ -202,11 +296,12 @@ router.post(
       // Create log entry - always use Pakistani time
       // If Android provided timestamp, parse it; otherwise use current Pakistani time
       const logTimestamp = timestamp ? parseToKarachiTime(timestamp) : getKarachiTime();
-      
+
       // Explicitly set timestamp to Pakistani time (middleware will also ensure this)
       const log = await prisma.log.create({
         data: {
           sessionId: dbSession.id,
+          deviceKey,
           level,
           message,
           timestamp: logTimestamp, // Pakistani time
@@ -238,7 +333,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: Log UUID
+ *         description: Log ID (integer)
  *     responses:
  *       200:
  *         description: Log details
@@ -252,8 +347,12 @@ router.post(
 router.get('/:logId', async (req, res, next) => {
   try {
     const { logId } = req.params;
+    const logIdInt = parseInt(logId, 10);
+    if (isNaN(logIdInt)) {
+      return res.status(400).json({ error: 'Invalid log ID' });
+    }
     const log = await prisma.log.findUnique({
-      where: { id: logId },
+      where: { id: logIdInt },
       include: {
         session: {
           include: {
@@ -291,7 +390,7 @@ router.get('/:logId', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Session UUID
+ *         description: Session ID (integer)
  *     responses:
  *       200:
  *         description: Logs deleted successfully
@@ -308,10 +407,14 @@ router.get('/:logId', async (req, res, next) => {
 router.delete('/session/:sessionId', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
+    const sessionIdInt = parseInt(sessionId, 10);
+    if (isNaN(sessionIdInt)) {
+      return res.status(400).json({ error: 'Invalid session ID' });
+    }
 
     // Check if session exists
     const session = await prisma.session.findUnique({
-      where: { id: sessionId },
+      where: { id: sessionIdInt },
     });
 
     if (!session) {
@@ -320,7 +423,7 @@ router.delete('/session/:sessionId', async (req, res, next) => {
 
     // Delete all logs for this session
     const result = await prisma.log.deleteMany({
-      where: { sessionId },
+      where: { sessionId: sessionIdInt },
     });
 
     console.log(`Deleted ${result.count} logs for session ${sessionId}`);
@@ -346,7 +449,7 @@ router.delete('/session/:sessionId', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Log UUID
+ *         description: Log ID (integer)
  *     responses:
  *       200:
  *         description: Log deleted successfully
@@ -365,10 +468,14 @@ router.delete('/session/:sessionId', async (req, res, next) => {
 router.delete('/:logId', async (req, res, next) => {
   try {
     const { logId } = req.params;
+    const logIdInt = parseInt(logId, 10);
+    if (isNaN(logIdInt)) {
+      return res.status(400).json({ error: 'Invalid log ID' });
+    }
 
     // Find the log first
     const log = await prisma.log.findUnique({
-      where: { id: logId },
+      where: { id: logIdInt },
     });
 
     if (!log) {
@@ -377,7 +484,7 @@ router.delete('/:logId', async (req, res, next) => {
 
     // Delete log
     await prisma.log.delete({
-      where: { id: logId },
+      where: { id: logIdInt },
     });
 
     console.log(`Log ${logId} deleted successfully`);

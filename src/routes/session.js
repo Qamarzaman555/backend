@@ -15,10 +15,10 @@ const router = express.Router();
  *         - sessionId
  *       properties:
  *         id:
- *           type: string
- *           description: Unique session ID
+ *           type: integer
+ *           description: Unique session ID (auto-incremented)
  *         deviceId:
- *           type: string
+ *           type: integer
  *           description: Device ID
  *         sessionId:
  *           type: string
@@ -101,7 +101,7 @@ router.get('/device/:deviceKey', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Session UUID
+ *         description: Session ID (integer)
  *     responses:
  *       200:
  *         description: Session details
@@ -115,8 +115,12 @@ router.get('/device/:deviceKey', async (req, res, next) => {
 router.get('/:sessionId', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
+    const sessionIdInt = parseInt(sessionId, 10);
+    if (isNaN(sessionIdInt)) {
+      return res.status(400).json({ error: 'Invalid session ID' });
+    }
     const session = await prisma.session.findUnique({
-      where: { id: sessionId },
+      where: { id: sessionIdInt },
       include: {
         device: true,
         logs: {
@@ -195,8 +199,19 @@ router.post(
       });
 
       // Create session
-      const session = await prisma.session.create({
-        data: {
+      // Upsert session (create if not exists, update if exists)
+      const session = await prisma.session.upsert({
+        where: {
+          deviceId_sessionId: {
+            deviceId: device.id,
+            sessionId,
+          },
+        },
+        update: {
+          appVersion,
+          buildNumber,
+        },
+        create: {
           deviceId: device.id,
           sessionId,
           appVersion,
@@ -247,7 +262,7 @@ router.post(
  *         required: true
  *         schema:
  *           type: string
- *         description: Session UUID
+ *         description: Session ID (integer)
  *     responses:
  *       200:
  *         description: Session deleted successfully
@@ -266,10 +281,14 @@ router.post(
 router.delete('/:sessionId', async (req, res, next) => {
   try {
     const { sessionId } = req.params;
+    const sessionIdInt = parseInt(sessionId, 10);
+    if (isNaN(sessionIdInt)) {
+      return res.status(400).json({ error: 'Invalid session ID' });
+    }
 
     // Find the session first
     const session = await prisma.session.findUnique({
-      where: { id: sessionId },
+      where: { id: sessionIdInt },
       include: {
         _count: {
           select: { logs: true },
@@ -283,7 +302,7 @@ router.delete('/:sessionId', async (req, res, next) => {
 
     // Delete session (cascades to logs due to onDelete: Cascade in schema)
     await prisma.session.delete({
-      where: { id: sessionId },
+      where: { id: sessionIdInt },
     });
 
     console.log(`Session ${sessionId} and all associated logs deleted successfully`);

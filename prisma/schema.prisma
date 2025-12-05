@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Device {
-  id        String    @id @default(uuid())
+  id        Int       @id @default(autoincrement())
   deviceKey String    @unique
   platform  String
   createdAt DateTime  @default(now())
@@ -22,8 +22,8 @@ model Device {
 }
 
 model Session {
-  id          String   @id @default(uuid())
-  deviceId    String
+  id          Int      @id @default(autoincrement())
+  deviceId    Int
   sessionId   String   // Numeric session ID (1, 2, 3, etc.)
   appVersion  String?
   buildNumber String?
@@ -37,14 +37,16 @@ model Session {
 }
 
 model Log {
-  id        String   @id @default(uuid())
-  sessionId String
+  id        Int      @id @default(autoincrement())
+  sessionId Int
+  deviceKey String
   timestamp DateTime @default(now())
   level     String
   message   String
   session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  @@index([deviceKey])
   @@index([timestamp])
   @@index([level])
   @@map("logs")

@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "devices" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "deviceKey" TEXT NOT NULL,
     "platform" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -11,8 +11,8 @@ CREATE TABLE "devices" (
 
 -- CreateTable
 CREATE TABLE "sessions" (
-    "id" TEXT NOT NULL,
-    "deviceId" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "deviceId" INTEGER NOT NULL,
     "sessionId" TEXT NOT NULL,
     "appVersion" TEXT,
     "buildNumber" TEXT,
@@ -24,8 +24,9 @@ CREATE TABLE "sessions" (
 
 -- CreateTable
 CREATE TABLE "logs" (
-    "id" TEXT NOT NULL,
-    "sessionId" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "deviceKey" TEXT NOT NULL,
     "timestamp" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "level" TEXT NOT NULL,
     "message" TEXT NOT NULL,
@@ -43,6 +44,9 @@ CREATE UNIQUE INDEX "sessions_deviceId_sessionId_key" ON "sessions"("deviceId", 
 CREATE INDEX "logs_sessionId_idx" ON "logs"("sessionId");
 
 -- CreateIndex
+CREATE INDEX "logs_deviceKey_idx" ON "logs"("deviceKey");
+
+-- CreateIndex
 CREATE INDEX "logs_timestamp_idx" ON "logs"("timestamp");
 
 -- CreateIndex
@@ -53,3 +57,4 @@ ALTER TABLE "sessions" ADD CONSTRAINT "sessions_deviceId_fkey" FOREIGN KEY ("dev
 
 -- AddForeignKey
 ALTER TABLE "logs" ADD CONSTRAINT "logs_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "sessions"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
